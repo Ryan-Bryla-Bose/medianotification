@@ -1,9 +1,8 @@
-package com.testing.medianotification
+package com.testing.medianotification.notification
 
 import android.annotation.SuppressLint
 import android.app.*
 import android.content.Context
-import android.media.MediaMetadata
 import android.media.VolumeProvider
 import android.media.session.MediaSession
 import android.media.session.PlaybackState
@@ -11,6 +10,7 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.media.session.MediaButtonReceiver
+import com.testing.medianotification.R
 
 class Manager private constructor(private val context: Context, private val mediaSession: MediaSession) {
 
@@ -32,7 +32,11 @@ class Manager private constructor(private val context: Context, private val medi
 
     companion object {
         fun getInstance(context: Context, mediaSession: MediaSession): Manager {
-            instance = instance ?: Manager(context, mediaSession)
+            instance = instance
+                ?: Manager(
+                    context,
+                    mediaSession
+                )
             return instance as Manager
         }
 

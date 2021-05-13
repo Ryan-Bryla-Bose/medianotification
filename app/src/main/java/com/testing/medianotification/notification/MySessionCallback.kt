@@ -1,4 +1,4 @@
-package com.testing.medianotification.callback
+package com.testing.medianotification.notification
 
 import android.media.session.MediaSession
 import android.os.Build
@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.os.ResultReceiver
 import android.util.Log
 import androidx.annotation.RequiresApi
-import com.testing.medianotification.Manager
 
 class MySessionCallback constructor(private val manager: Manager) : MediaSession.Callback() {
     val TAG = "MySessionCallback"

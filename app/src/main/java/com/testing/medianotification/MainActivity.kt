@@ -1,17 +1,6 @@
 package com.testing.medianotification
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
-import android.media.MediaMetadata
-import android.media.session.MediaController
-import android.media.session.MediaSession
-import android.media.session.PlaybackState
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.Menu
@@ -20,6 +9,7 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
+import com.testing.medianotification.notification.MediaPlaybackService
 
 
 class MainActivity : AppCompatActivity() {

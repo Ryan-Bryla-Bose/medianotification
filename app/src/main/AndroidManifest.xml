@@ -20,7 +20,7 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".MediaPlaybackService">
+        <service android:name=".notification.MediaPlaybackService">
             <intent-filter>
                 <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>

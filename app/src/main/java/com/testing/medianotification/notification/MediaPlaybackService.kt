@@ -1,4 +1,4 @@
-package com.testing.medianotification
+package com.testing.medianotification.notification
 
 import android.content.Intent
 import android.media.MediaMetadata
@@ -9,8 +9,6 @@ import android.os.Build
 import android.os.Bundle
 import android.service.media.MediaBrowserService
 import android.util.Log
-import androidx.media.session.MediaButtonReceiver
-import com.testing.medianotification.callback.MySessionCallback
 
 private const val MY_MEDIA_ROOT_ID = "media_root_id"
 private const val MY_EMPTY_MEDIA_ROOT_ID = "empty_root_id"
@@ -61,7 +59,11 @@ class MediaPlaybackService : MediaBrowserService() {
 
             setPlaybackState(stateBuilder.build())
 
-            setCallback(MySessionCallback(manager))
+            setCallback(
+                MySessionCallback(
+                    manager
+                )
+            )
 
             setSessionToken(sessionToken)
         }
