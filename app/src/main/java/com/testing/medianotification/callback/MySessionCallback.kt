@@ -24,24 +24,13 @@ class MySessionCallback constructor(private val manager: Manager) : MediaSession
         manager.updateNotification()
     }
 
-    override fun onPause() {
-        super.onPause()
-        Log.d(TAG, "onPause")
-    }
-
     override fun onSkipToNext() {
         super.onSkipToNext()
         Log.d(TAG, "onSkipToNext")
     }
 
-
     override fun onSkipToPrevious() {
         super.onSkipToPrevious()
         Log.d(TAG, "onSkipToPrevious")
-    }
-
-    override fun onCustomAction(action: String, extras: Bundle?) {
-        super.onCustomAction(action, extras)
-        Log.d(TAG, "onCustomAction called with: $action")
     }
 }

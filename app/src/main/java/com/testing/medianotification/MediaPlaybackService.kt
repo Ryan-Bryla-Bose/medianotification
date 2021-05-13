@@ -1,6 +1,7 @@
 package com.testing.medianotification
 
 import android.content.Intent
+import android.media.MediaMetadata
 import android.media.browse.MediaBrowser
 import android.media.session.MediaSession
 import android.media.session.PlaybackState
@@ -43,9 +44,20 @@ class MediaPlaybackService : MediaBrowserService() {
             stateBuilder = PlaybackState.Builder()
                 .setActions(
                     PlaybackState.ACTION_PLAY or
-                    PlaybackState.ACTION_SKIP_TO_NEXT or
-                    PlaybackState.ACTION_SKIP_TO_PREVIOUS
+                            PlaybackState.ACTION_SKIP_TO_NEXT or
+                            PlaybackState.ACTION_SKIP_TO_PREVIOUS
                 )
+
+            setMetadata(
+                MediaMetadata.Builder()
+                    .putString(MediaMetadata.METADATA_KEY_TITLE, "Wonder")
+                    .putString(MediaMetadata.METADATA_KEY_ARTIST, "Tranquilities")
+                    .putLong(
+                        MediaMetadata.METADATA_KEY_DURATION,
+                        -1
+                    ) // negative is unknown or infinite
+                    .build()
+            )
 
             setPlaybackState(stateBuilder.build())
 

@@ -56,27 +56,6 @@ class Manager private constructor(private val context: Context, private val medi
 
         notificationManager.createNotificationChannel(notificationChannel)
 
-        mediaSession.setMetadata(
-            MediaMetadata.Builder()
-                .putString(MediaMetadata.METADATA_KEY_TITLE, "Wonder")
-                .putString(MediaMetadata.METADATA_KEY_ARTIST, "Tranquilities")
-                .putLong(MediaMetadata.METADATA_KEY_DURATION, -1) // negative is unknown or infinite
-                .build()
-        )
-
-        mediaSession.setPlaybackState(
-            PlaybackState.Builder()
-                .setState(
-                    PlaybackState.STATE_PLAYING,
-                    0,
-                    1F
-                )
-                .setActions(PlaybackState.ACTION_PLAY)
-                .build()
-        )
-
-
-
         // Create a MediaStyle object and supply your media session token to it.
         val mediaStyle = Notification.MediaStyle().setMediaSession(mediaSession.sessionToken)
             .setShowActionsInCompactView(0, 1, 2)
