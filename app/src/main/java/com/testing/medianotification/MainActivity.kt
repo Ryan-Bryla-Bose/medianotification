@@ -14,6 +14,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.testing.medianotification.notification.MediaPlaybackService
 import com.testing.medianotification.notification.MyConnectionCallback
+import kotlinx.android.synthetic.main.fragment_first.*
 
 
 class MainActivity : AppCompatActivity() {
@@ -30,6 +31,8 @@ class MainActivity : AppCompatActivity() {
             Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show()
         }
+
+
 
         mediaBrowser = MediaBrowser(
             this,

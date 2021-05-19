@@ -128,6 +128,7 @@ class Manager private constructor(
             )
             .setColor(context.resources.getColor(R.color.purple_200, context.theme))
             .setColorized(true)
+            .setOngoing(true)
     }
 
 }

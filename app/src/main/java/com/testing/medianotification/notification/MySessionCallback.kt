@@ -13,7 +13,10 @@ import android.support.v4.media.session.MediaSessionCompat
 import android.util.Log
 import android.view.KeyEvent
 import androidx.annotation.RequiresApi
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.os.bundleOf
 
+@RequiresApi(Build.VERSION_CODES.O)
 class MySessionCallback constructor(private val manager: Manager, private val context: Context) :
     MediaSessionCompat.Callback() {
     val TAG = "MySessionCallback"
@@ -53,16 +56,31 @@ class MySessionCallback constructor(private val manager: Manager, private val co
                 when (it) {
                     AudioManager.AUDIOFOCUS_LOSS -> {
                         manager.playing = false
+                        Log.d(TAG, "audioFocus LOST")
                         manager.updateNotification()
+                        Log.d(TAG, "isMusicActive: ${am.isMusicActive}")
                     }
                     AudioManager.AUDIOFOCUS_GAIN -> {
                         manager.playing = true
+                        Log.d(TAG, "audioFocus GAINED")
                         manager.updateNotification()
                     }
+                    AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                        manager.playing = false
+                        Log.d(TAG, "audioFocus AUDIOFOCUS_LOSS_TRANSIENT")
+                        manager.updateNotification()
+                    }
+                    else -> {
+                        manager.playing = false
+                        Log.d(TAG, "other audiofocus event")
+                        manager.updateNotification()
+                    }
+
                 }
             })
             setAudioAttributes(AudioAttributes.Builder().run {
                 setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+
                 build()
             })
             build()
@@ -72,15 +90,16 @@ class MySessionCallback constructor(private val manager: Manager, private val co
             Log.d(TAG, "AUDIOFOCUS_REQUEST_GRANTED")
             // Start the service
             context.startService(Intent(context, MediaPlaybackService::class.java))
-            // Set the session active  (and update metadata and state)
             manager.mediaSession.isActive = true
-            // start the player (custom call)
-//            player.start()
-//            // Register BECOME_NOISY BroadcastReceiver
-//            registerReceiver(myNoisyAudioStreamReceiver, intentFilter)
-            // Put the service in the foreground, post notification
-            manager.updateNotification()
+            var notificationManager = NotificationManagerCompat.from(context)
+            notificationManager.notify(1, manager.updateNotification())
         }
+    }
+
+    override fun onPlayFromSearch(query: String?, extras: Bundle?) {
+        super.onPlayFromSearch(query, extras)
+        Log.d(TAG, "Playing based on query: $query")
+        Log.d(TAG, "Search bundle: ${extras.toString()}")
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -99,10 +118,12 @@ class MySessionCallback constructor(private val manager: Manager, private val co
     override fun onSkipToNext() {
         super.onSkipToNext()
         Log.d(TAG, "onSkipToNext")
+        manager.updateNotification()
     }
 
     override fun onSkipToPrevious() {
         super.onSkipToPrevious()
         Log.d(TAG, "onSkipToPrevious")
+        manager.updateNotification()
     }
 }

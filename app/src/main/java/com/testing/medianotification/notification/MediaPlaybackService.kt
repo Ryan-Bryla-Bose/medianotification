@@ -1,5 +1,6 @@
 package com.testing.medianotification.notification
 
+import android.app.PendingIntent
 import android.content.Intent
 import android.media.MediaMetadata
 import android.os.Build
@@ -14,6 +15,7 @@ import android.util.Log
 import androidx.media.MediaBrowserServiceCompat
 import androidx.media.VolumeProviderCompat
 import androidx.media.session.MediaButtonReceiver
+import com.testing.medianotification.MainActivity
 
 private const val MY_MEDIA_ROOT_ID = "media_root_id"
 private const val MY_EMPTY_MEDIA_ROOT_ID = "empty_root_id"
@@ -23,7 +25,6 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     val TAG = "MediaPlaybackService"
 
     private lateinit var mediaSession: MediaSessionCompat
-    private lateinit var stateBuilder: PlaybackStateCompat.Builder
     private lateinit var manager: Manager
 
     private val volumeProvider = object : VolumeProviderCompat(VOLUME_CONTROL_ABSOLUTE, 10, 0) {
@@ -39,11 +40,11 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             Log.d(TAG, "Set volume to: $volume")
         }
     }
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        MediaButtonReceiver.handleIntent(mediaSession, intent)
-        return super.onStartCommand(intent, flags, startId)
-    }
+//
+//    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+//        MediaButtonReceiver.handleIntent(mediaSession, intent)
+//        return super.onStartCommand(intent, flags, startId)
+//    }
 
     override fun onCreate() {
         super.onCreate()
@@ -74,6 +75,15 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
                 MySessionCallback(
                     manager,
                     this@MediaPlaybackService
+                )
+            )
+
+            setSessionActivity(
+                PendingIntent.getActivity(
+                    this@MediaPlaybackService,
+                    1,
+                    Intent(this@MediaPlaybackService, MainActivity::class.java),
+                    PendingIntent.FLAG_UPDATE_CURRENT
                 )
             )
 
@@ -113,7 +123,11 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         if (MY_MEDIA_ROOT_ID == parentId) {
             mediaItems.add(
                 MediaBrowserCompat.MediaItem(
-                    MediaDescriptionCompat.Builder().setTitle("hello").build(),
+                    MediaDescriptionCompat.Builder()
+                        .setMediaId("HELLO_ID")
+                        .setTitle("hello")
+                        .setDescription("test hello")
+                        .build(),
                     MediaBrowserCompat.MediaItem.FLAG_PLAYABLE
                 )
             )
