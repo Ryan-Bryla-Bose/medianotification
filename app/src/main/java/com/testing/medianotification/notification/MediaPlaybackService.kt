@@ -68,12 +68,6 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
                     .build()
             )
 
-            setFlags(
-                MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
-                        MediaSessionCompat.FLAG_HANDLES_QUEUE_COMMANDS or
-                        MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
-            )
-
             setPlaybackToRemote(volumeProvider)
 
             setCallback(

@@ -14,7 +14,8 @@ import android.util.Log
 import android.view.KeyEvent
 import androidx.annotation.RequiresApi
 
-class MySessionCallback constructor(private val manager: Manager, private val context: Context) : MediaSessionCompat.Callback() {
+class MySessionCallback constructor(private val manager: Manager, private val context: Context) :
+    MediaSessionCompat.Callback() {
     val TAG = "MySessionCallback"
 
     override fun onCommand(command: String, args: Bundle?, cb: ResultReceiver?) {
@@ -28,7 +29,10 @@ class MySessionCallback constructor(private val manager: Manager, private val co
     }
 
     override fun onMediaButtonEvent(mediaButtonIntent: Intent): Boolean {
-        Log.d(TAG, "onMediaButtonEvent: ${mediaButtonIntent.getParcelableExtra<KeyEvent>(Intent.EXTRA_KEY_EVENT)}")
+        Log.d(
+            TAG,
+            "onMediaButtonEvent: ${mediaButtonIntent.getParcelableExtra<KeyEvent>(Intent.EXTRA_KEY_EVENT)}"
+        )
         return super.onMediaButtonEvent(mediaButtonIntent)
     }
 
@@ -46,6 +50,16 @@ class MySessionCallback constructor(private val manager: Manager, private val co
         val audioFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN).run {
             setOnAudioFocusChangeListener(AudioManager.OnAudioFocusChangeListener {
                 Log.d(TAG, "audio focus changed: $it")
+                when (it) {
+                    AudioManager.AUDIOFOCUS_LOSS -> {
+                        manager.playing = false
+                        manager.updateNotification()
+                    }
+                    AudioManager.AUDIOFOCUS_GAIN -> {
+                        manager.playing = true
+                        manager.updateNotification()
+                    }
+                }
             })
             setAudioAttributes(AudioAttributes.Builder().run {
                 setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
