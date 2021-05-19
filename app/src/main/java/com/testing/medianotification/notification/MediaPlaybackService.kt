@@ -1,14 +1,18 @@
 package com.testing.medianotification.notification
 
 import android.content.Intent
+import android.media.MediaDescription
 import android.media.MediaMetadata
 import android.media.browse.MediaBrowser
+import android.media.session.MediaController
 import android.media.session.MediaSession
 import android.media.session.PlaybackState
 import android.os.Build
 import android.os.Bundle
 import android.service.media.MediaBrowserService
+import android.support.v4.media.session.MediaSessionCompat
 import android.util.Log
+import androidx.media.session.MediaButtonReceiver
 
 private const val MY_MEDIA_ROOT_ID = "media_root_id"
 private const val MY_EMPTY_MEDIA_ROOT_ID = "empty_root_id"
@@ -22,7 +26,8 @@ class MediaPlaybackService : MediaBrowserService() {
     private lateinit var manager: Manager
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        //MediaButtonReceiver.handleIntent(mediaSession, intent)
+        val mediaSessionCompat = MediaSessionCompat.fromMediaSession(this, mediaSession)
+        MediaButtonReceiver.handleIntent(mediaSessionCompat, intent)
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -39,13 +44,6 @@ class MediaPlaybackService : MediaBrowserService() {
         mediaSession.apply {
             setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS or MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS)
 
-            stateBuilder = PlaybackState.Builder()
-                .setActions(
-                    PlaybackState.ACTION_PLAY or
-                            PlaybackState.ACTION_SKIP_TO_NEXT or
-                            PlaybackState.ACTION_SKIP_TO_PREVIOUS
-                )
-
             setMetadata(
                 MediaMetadata.Builder()
                     .putString(MediaMetadata.METADATA_KEY_TITLE, "Wonder")
@@ -57,20 +55,43 @@ class MediaPlaybackService : MediaBrowserService() {
                     .build()
             )
 
-            setPlaybackState(stateBuilder.build())
-
             setCallback(
                 MySessionCallback(
-                    manager
+                    manager,
+                    this@MediaPlaybackService
                 )
             )
 
+            isActive = true
             setSessionToken(sessionToken)
+
+            controller.registerCallback(object : MediaController.Callback() {
+                override fun onAudioInfoChanged(info: MediaController.PlaybackInfo?) {
+                    super.onAudioInfoChanged(info)
+                    Log.d(TAG, "onAudioInfoChanged: ${info.toString()}")
+                }
+
+                override fun onPlaybackStateChanged(state: PlaybackState?) {
+                    super.onPlaybackStateChanged(state)
+                    Log.d(TAG, "onPlaybackStateChanged: ${state.toString()}")
+
+                }
+            })
+
+            controller.transportControls
         }
 
+
         Log.d(TAG, "onCreate called, mediaSession created")
+        Log.d(TAG, "media session active: ${mediaSession.isActive}")
 
         startForeground(1, manager.updateNotification())
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaSession.release()
+        stopForeground(true)
     }
 
     override fun onLoadChildren(
@@ -81,6 +102,12 @@ class MediaPlaybackService : MediaBrowserService() {
 
         // Check if this is the root menu:
         if (MY_MEDIA_ROOT_ID == parentId) {
+            mediaItems.add(
+                MediaBrowser.MediaItem(
+                    MediaDescription.Builder().setTitle("hello").build(),
+                    MediaBrowser.MediaItem.FLAG_PLAYABLE
+                )
+            )
             // Build the MediaItem objects for the top level,
             // and put them in the mediaItems list...
         } else {

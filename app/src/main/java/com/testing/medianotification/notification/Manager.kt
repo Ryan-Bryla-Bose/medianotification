@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.*
 import android.content.Context
 import android.media.VolumeProvider
+import android.media.session.MediaController
 import android.media.session.MediaSession
 import android.media.session.PlaybackState
 import android.os.Build
@@ -12,7 +13,10 @@ import androidx.annotation.RequiresApi
 import androidx.media.session.MediaButtonReceiver
 import com.testing.medianotification.R
 
-class Manager private constructor(private val context: Context, private val mediaSession: MediaSession) {
+class Manager private constructor(
+    private val context: Context,
+    val mediaSession: MediaSession
+) {
 
     var playing = false
 
@@ -48,7 +52,7 @@ class Manager private constructor(private val context: Context, private val medi
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun updateNotification() : Notification {
+    fun updateNotification(): Notification {
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -59,6 +63,20 @@ class Manager private constructor(private val context: Context, private val medi
             NotificationChannel(channelId, channelName, importance)
 
         notificationManager.createNotificationChannel(notificationChannel)
+
+        mediaSession.setPlaybackState(
+            PlaybackState.Builder()
+                .setState(
+                    if (playing) PlaybackState.STATE_PLAYING
+                    else PlaybackState.STATE_STOPPED, 0, 1F
+                )
+                .setActions(
+                    PlaybackState.ACTION_PLAY or
+                            PlaybackState.ACTION_PAUSE or
+                            PlaybackState.ACTION_SKIP_TO_NEXT or
+                            PlaybackState.ACTION_SKIP_TO_PREVIOUS
+                ).build()
+        )
 
         // Create a MediaStyle object and supply your media session token to it.
         val mediaStyle = Notification.MediaStyle().setMediaSession(mediaSession.sessionToken)
@@ -87,7 +105,9 @@ class Manager private constructor(private val context: Context, private val medi
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .addAction(
                 Notification.Action.Builder(
-                    R.drawable.ic_previous_enabled_dark, "Prev", MediaButtonReceiver.buildMediaButtonPendingIntent(
+                    R.drawable.ic_previous_enabled_dark,
+                    "Prev",
+                    MediaButtonReceiver.buildMediaButtonPendingIntent(
                         context,
                         PlaybackState.ACTION_SKIP_TO_PREVIOUS
                     )
@@ -105,7 +125,9 @@ class Manager private constructor(private val context: Context, private val medi
             )
             .addAction(
                 Notification.Action.Builder(
-                    R.drawable.ic_next_enabled_dark, "Skip", MediaButtonReceiver.buildMediaButtonPendingIntent(
+                    R.drawable.ic_next_enabled_dark,
+                    "Skip",
+                    MediaButtonReceiver.buildMediaButtonPendingIntent(
                         context,
                         PlaybackState.ACTION_SKIP_TO_NEXT
                     )

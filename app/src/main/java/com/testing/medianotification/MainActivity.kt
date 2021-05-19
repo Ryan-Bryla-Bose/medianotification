@@ -1,6 +1,9 @@
 package com.testing.medianotification
 
+import android.content.ComponentName
 import android.content.Intent
+import android.media.browse.MediaBrowser
+import android.media.session.MediaController
 import android.os.Build
 import android.os.Bundle
 import android.view.Menu
@@ -10,9 +13,12 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.testing.medianotification.notification.MediaPlaybackService
+import com.testing.medianotification.notification.MyConnectionCallback
 
 
 class MainActivity : AppCompatActivity() {
+
+    lateinit var mediaBrowser: MediaBrowser
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,8 +31,20 @@ class MainActivity : AppCompatActivity() {
                 .setAction("Action", null).show()
         }
 
+        mediaBrowser = MediaBrowser(
+            this,
+            ComponentName(this, MediaPlaybackService::class.java),
+            MyConnectionCallback(),
+            null // optional Bundle
+        )
+
         val serviceIntent = Intent(this, MediaPlaybackService::class.java)
-        startForegroundService(serviceIntent)
+        startService(serviceIntent)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        mediaBrowser.disconnect()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
