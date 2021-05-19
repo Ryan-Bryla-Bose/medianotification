@@ -9,11 +9,12 @@ import android.media.session.MediaSession
 import android.os.Build
 import android.os.Bundle
 import android.os.ResultReceiver
+import android.support.v4.media.session.MediaSessionCompat
 import android.util.Log
 import android.view.KeyEvent
 import androidx.annotation.RequiresApi
 
-class MySessionCallback constructor(private val manager: Manager, private val context: Context) : MediaSession.Callback() {
+class MySessionCallback constructor(private val manager: Manager, private val context: Context) : MediaSessionCompat.Callback() {
     val TAG = "MySessionCallback"
 
     override fun onCommand(command: String, args: Bundle?, cb: ResultReceiver?) {

@@ -1,33 +1,47 @@
 package com.testing.medianotification.notification
 
 import android.content.Intent
-import android.media.MediaDescription
 import android.media.MediaMetadata
-import android.media.browse.MediaBrowser
-import android.media.session.MediaController
-import android.media.session.MediaSession
-import android.media.session.PlaybackState
 import android.os.Build
 import android.os.Bundle
-import android.service.media.MediaBrowserService
+import android.support.v4.media.MediaBrowserCompat
+import android.support.v4.media.MediaDescriptionCompat
+import android.support.v4.media.MediaMetadataCompat
+import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.MediaSessionCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
+import androidx.media.MediaBrowserServiceCompat
+import androidx.media.VolumeProviderCompat
 import androidx.media.session.MediaButtonReceiver
 
 private const val MY_MEDIA_ROOT_ID = "media_root_id"
 private const val MY_EMPTY_MEDIA_ROOT_ID = "empty_root_id"
 
-class MediaPlaybackService : MediaBrowserService() {
+class MediaPlaybackService : MediaBrowserServiceCompat() {
 
     val TAG = "MediaPlaybackService"
 
-    private lateinit var mediaSession: MediaSession
-    private lateinit var stateBuilder: PlaybackState.Builder
+    private lateinit var mediaSession: MediaSessionCompat
+    private lateinit var stateBuilder: PlaybackStateCompat.Builder
     private lateinit var manager: Manager
 
+    private val volumeProvider = object : VolumeProviderCompat(VOLUME_CONTROL_ABSOLUTE, 10, 0) {
+        override fun onAdjustVolume(direction: Int) {
+            super.onAdjustVolume(direction)
+            currentVolume += direction
+            Log.d(TAG, "Adjusted volume in direction: $direction")
+        }
+
+        override fun onSetVolumeTo(volume: Int) {
+            super.onSetVolumeTo(volume)
+            currentVolume = volume
+            Log.d(TAG, "Set volume to: $volume")
+        }
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val mediaSessionCompat = MediaSessionCompat.fromMediaSession(this, mediaSession)
-        MediaButtonReceiver.handleIntent(mediaSessionCompat, intent)
+        MediaButtonReceiver.handleIntent(mediaSession, intent)
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -37,15 +51,14 @@ class MediaPlaybackService : MediaBrowserService() {
             return
         }
 
-        mediaSession = MediaSession(this, "MediaNotificationSession")
+        mediaSession = MediaSessionCompat(this, "MediaNotificationSession")
 
         manager = Manager.getInstance(this, mediaSession)
 
         mediaSession.apply {
-            setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS or MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS)
 
             setMetadata(
-                MediaMetadata.Builder()
+                MediaMetadataCompat.Builder()
                     .putString(MediaMetadata.METADATA_KEY_TITLE, "Wonder")
                     .putString(MediaMetadata.METADATA_KEY_ARTIST, "Tranquilities")
                     .putLong(
@@ -54,6 +67,14 @@ class MediaPlaybackService : MediaBrowserService() {
                     ) // negative is unknown or infinite
                     .build()
             )
+
+            setFlags(
+                MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
+                        MediaSessionCompat.FLAG_HANDLES_QUEUE_COMMANDS or
+                        MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
+            )
+
+            setPlaybackToRemote(volumeProvider)
 
             setCallback(
                 MySessionCallback(
@@ -65,13 +86,13 @@ class MediaPlaybackService : MediaBrowserService() {
             isActive = true
             setSessionToken(sessionToken)
 
-            controller.registerCallback(object : MediaController.Callback() {
-                override fun onAudioInfoChanged(info: MediaController.PlaybackInfo?) {
+            controller.registerCallback(object : MediaControllerCompat.Callback() {
+                override fun onAudioInfoChanged(info: MediaControllerCompat.PlaybackInfo?) {
                     super.onAudioInfoChanged(info)
                     Log.d(TAG, "onAudioInfoChanged: ${info.toString()}")
                 }
 
-                override fun onPlaybackStateChanged(state: PlaybackState?) {
+                override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
                     super.onPlaybackStateChanged(state)
                     Log.d(TAG, "onPlaybackStateChanged: ${state.toString()}")
 
@@ -88,24 +109,18 @@ class MediaPlaybackService : MediaBrowserService() {
         startForeground(1, manager.updateNotification())
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        mediaSession.release()
-        stopForeground(true)
-    }
-
     override fun onLoadChildren(
         parentId: String,
-        result: Result<MutableList<MediaBrowser.MediaItem>>
+        result: Result<MutableList<MediaBrowserCompat.MediaItem>>
     ) {
-        val mediaItems = mutableListOf<MediaBrowser.MediaItem>()
+        val mediaItems = mutableListOf<MediaBrowserCompat.MediaItem>()
 
         // Check if this is the root menu:
         if (MY_MEDIA_ROOT_ID == parentId) {
             mediaItems.add(
-                MediaBrowser.MediaItem(
-                    MediaDescription.Builder().setTitle("hello").build(),
-                    MediaBrowser.MediaItem.FLAG_PLAYABLE
+                MediaBrowserCompat.MediaItem(
+                    MediaDescriptionCompat.Builder().setTitle("hello").build(),
+                    MediaBrowserCompat.MediaItem.FLAG_PLAYABLE
                 )
             )
             // Build the MediaItem objects for the top level,
@@ -116,6 +131,13 @@ class MediaPlaybackService : MediaBrowserService() {
         }
         result.sendResult(mediaItems)
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaSession.release()
+        stopForeground(true)
+    }
+
 
     override fun onGetRoot(
         clientPackageName: String,
