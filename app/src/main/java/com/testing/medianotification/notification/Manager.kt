@@ -60,7 +60,7 @@ class Manager private constructor(
             PlaybackStateCompat.Builder()
                 .setState(
                     if (playing) PlaybackStateCompat.STATE_PLAYING
-                    else PlaybackStateCompat.STATE_STOPPED, 0, 1F
+                    else PlaybackStateCompat.STATE_PAUSED, 0, 1F
                 )
                 .setActions(
                     PlaybackStateCompat.ACTION_PLAY or
@@ -69,9 +69,7 @@ class Manager private constructor(
                             PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
                 ).build()
         )
-        // Create a MediaStyle object and supply your media session token to it.
-//        val mediaStyle = Notification.MediaStyle().setMediaSession(mediaSession.sessionToken)
-//            .setShowActionsInCompactView(0, 1, 2)
+
         val mediaStyle = MediaStyle().setMediaSession(mediaSession.sessionToken)
             .setShowActionsInCompactView(0, 1, 2)
 
@@ -81,7 +79,7 @@ class Manager private constructor(
         // Don't forget to include a small icon.
         val notificationBuilder = getNotification(mediaStyle, channelId)
 
-        notificationManager.notify(1, notificationBuilder.build())
+        //notificationManager.notify(1, notificationBuilder.build())
         return notificationBuilder.build()
     }
 
@@ -92,7 +90,6 @@ class Manager private constructor(
         mediaStyle: MediaStyle,
         channelId: String
     ): NotificationCompat.Builder {
-
         return NotificationCompat.Builder(context, channelId)
             .setStyle(mediaStyle)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
@@ -112,7 +109,7 @@ class Manager private constructor(
                     "Play",
                     MediaButtonReceiver.buildMediaButtonPendingIntent(
                         context,
-                        PlaybackStateCompat.ACTION_PLAY
+                        if (!playing) PlaybackStateCompat.ACTION_PLAY else PlaybackStateCompat.ACTION_PAUSE
                     )
                 ).build()
             )
@@ -128,7 +125,7 @@ class Manager private constructor(
             )
             .setColor(context.resources.getColor(R.color.purple_200, context.theme))
             .setColorized(true)
-            .setOngoing(true)
+            .setOngoing(false)
     }
 
 }

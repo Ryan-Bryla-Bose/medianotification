@@ -29,14 +29,12 @@ class FirstFragment : Fragment() {
             findNavController().navigate(R.id.action_FirstFragment_to_SecondFragment)
         }
 
-        val myController = MyController(requireContext())
-
         button_play.setOnClickListener {
-            myController.play()
+            MainActivity.mediaController?.transportControls?.play()
         }
 
         button_pause.setOnClickListener {
-            myController.pause()
+            MainActivity.mediaController?.transportControls?.pause()
         }
     }
 }

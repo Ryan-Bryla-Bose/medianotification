@@ -1,9 +1,9 @@
 package com.testing.medianotification.notification
 
-import android.media.browse.MediaBrowser
+import android.support.v4.media.MediaBrowserCompat
 import android.util.Log
 
-class MyConnectionCallback : MediaBrowser.ConnectionCallback() {
+class MyConnectionCallback : MediaBrowserCompat.ConnectionCallback() {
 
     private val TAG = "MyConnectionCallback"
 

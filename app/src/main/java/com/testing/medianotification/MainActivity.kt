@@ -6,6 +6,8 @@ import android.media.browse.MediaBrowser
 import android.media.session.MediaController
 import android.os.Build
 import android.os.Bundle
+import android.support.v4.media.MediaBrowserCompat
+import android.support.v4.media.session.MediaControllerCompat
 import android.view.Menu
 import android.view.MenuItem
 import androidx.annotation.RequiresApi
@@ -19,7 +21,7 @@ import kotlinx.android.synthetic.main.fragment_first.*
 
 class MainActivity : AppCompatActivity() {
 
-    lateinit var mediaBrowser: MediaBrowser
+    lateinit var mediaBrowser: MediaBrowserCompat
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,7 +36,7 @@ class MainActivity : AppCompatActivity() {
 
 
 
-        mediaBrowser = MediaBrowser(
+        mediaBrowser = MediaBrowserCompat(
             this,
             ComponentName(this, MediaPlaybackService::class.java),
             MyConnectionCallback(),
@@ -42,7 +44,7 @@ class MainActivity : AppCompatActivity() {
         )
 
         val serviceIntent = Intent(this, MediaPlaybackService::class.java)
-        startService(serviceIntent)
+        startForegroundService(serviceIntent)
     }
 
     override fun onStop() {
@@ -64,5 +66,9 @@ class MainActivity : AppCompatActivity() {
             R.id.action_settings -> true
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    companion object {
+        var mediaController: MediaControllerCompat? = null
     }
 }

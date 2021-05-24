@@ -12,6 +12,8 @@ import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
+import androidx.annotation.RequiresApi
+import androidx.core.app.NotificationManagerCompat
 import androidx.media.MediaBrowserServiceCompat
 import androidx.media.VolumeProviderCompat
 import androidx.media.session.MediaButtonReceiver
@@ -40,11 +42,11 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             Log.d(TAG, "Set volume to: $volume")
         }
     }
-//
-//    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-//        MediaButtonReceiver.handleIntent(mediaSession, intent)
-//        return super.onStartCommand(intent, flags, startId)
-//    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        MediaButtonReceiver.handleIntent(mediaSession, intent)
+        return super.onStartCommand(intent, flags, startId)
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -74,6 +76,7 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             setCallback(
                 MySessionCallback(
                     manager,
+                    applicationContext,
                     this@MediaPlaybackService
                 )
             )
@@ -96,14 +99,19 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
                     Log.d(TAG, "onAudioInfoChanged: ${info.toString()}")
                 }
 
+                @RequiresApi(Build.VERSION_CODES.O)
                 override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
                     super.onPlaybackStateChanged(state)
+                    val notificationManager = NotificationManagerCompat.from(this@MediaPlaybackService)
+                    when(state?.state) {
+                        PlaybackStateCompat.STATE_PLAYING -> manager.playing = true
+                        else -> manager.playing = false
+                    }
+                    //notificationManager.notify(1, manager.updateNotification())
                     Log.d(TAG, "onPlaybackStateChanged: ${state.toString()}")
 
                 }
             })
-
-            controller.transportControls
         }
 
 
