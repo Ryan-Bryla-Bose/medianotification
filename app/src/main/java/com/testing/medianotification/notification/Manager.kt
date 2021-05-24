@@ -23,7 +23,6 @@ class Manager private constructor(
     val mediaSession: MediaSessionCompat
 ) {
 
-    var playing = false
 
     val TAG = "Manager"
 
@@ -40,10 +39,6 @@ class Manager private constructor(
         private var instance: Manager? = null
     }
 
-    fun togglePlaying() {
-        playing = !playing
-    }
-
     @RequiresApi(Build.VERSION_CODES.O)
     fun updateNotification(): Notification {
         val notificationManager = NotificationManagerCompat.from(context)
@@ -56,30 +51,10 @@ class Manager private constructor(
 
         notificationManager.createNotificationChannel(notificationChannel)
 
-        mediaSession.setPlaybackState(
-            PlaybackStateCompat.Builder()
-                .setState(
-                    if (playing) PlaybackStateCompat.STATE_PLAYING
-                    else PlaybackStateCompat.STATE_PAUSED, 0, 1F
-                )
-                .setActions(
-                    PlaybackStateCompat.ACTION_PLAY or
-                            PlaybackStateCompat.ACTION_PAUSE or
-                            PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
-                            PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
-                ).build()
-        )
-
         val mediaStyle = MediaStyle().setMediaSession(mediaSession.sessionToken)
             .setShowActionsInCompactView(0, 1, 2)
 
-
-        // Create a Notification which is styled by your MediaStyle object.
-        // This connects your media session to the media controls.
-        // Don't forget to include a small icon.
         val notificationBuilder = getNotification(mediaStyle, channelId)
-
-        //notificationManager.notify(1, notificationBuilder.build())
         return notificationBuilder.build()
     }
 
@@ -90,6 +65,9 @@ class Manager private constructor(
         mediaStyle: MediaStyle,
         channelId: String
     ): NotificationCompat.Builder {
+        val state = mediaSession.controller.playbackState.state
+        val playing = state == PlaybackStateCompat.STATE_PLAYING
+
         return NotificationCompat.Builder(context, channelId)
             .setStyle(mediaStyle)
             .setSmallIcon(R.drawable.ic_launcher_foreground)

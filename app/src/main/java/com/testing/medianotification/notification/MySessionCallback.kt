@@ -18,7 +18,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.media.MediaBrowserServiceCompat
 
 @RequiresApi(Build.VERSION_CODES.O)
-class MySessionCallback constructor(private val manager: Manager, private val context: Context, private val service: MediaBrowserServiceCompat) :
+class MySessionCallback constructor(private val manager: Manager, private val context: Context) :
     MediaSessionCompat.Callback() {
     val TAG = "MySessionCallback"
 
@@ -46,8 +46,6 @@ class MySessionCallback constructor(private val manager: Manager, private val co
     override fun onPlay() {
         super.onPlay()
         Log.d(TAG, "onPlay")
-        manager.togglePlaying()
-
 
         val am = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
@@ -65,34 +63,38 @@ class MySessionCallback constructor(private val manager: Manager, private val co
 
         if (hasFocus) {
             manager.mediaSession.isActive = true
-//            manager.mediaSession.setPlaybackState(
-//                PlaybackStateCompat.Builder()
-//                    .setState(
-//                        PlaybackStateCompat.STATE_PLAYING, 0, 1F
-//                    )
-//                    .setActions(
-//                        PlaybackStateCompat.ACTION_PAUSE or
-//                                PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
-//                                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
-//                    ).build()
-//            )
+            manager.mediaSession.setPlaybackState(
+                playbackStateBuilder
+                    .setState(
+                        PlaybackStateCompat.STATE_PLAYING, 0, 1F
+                    )
+                    .setActions(
+                        PlaybackStateCompat.ACTION_PAUSE or
+                                PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+                                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+                    ).build()
+            )
 //            service.startForeground(1, manager.updateNotification())
-            Log.d(TAG, "AUDIOFOCUS already acquired")
-
-            val notificationManager = NotificationManagerCompat.from(context)
-            notificationManager.notify(1, manager.updateNotification())
-
+            Log.d(TAG, "AUDIO_FOCUS already acquired")
             return
         }
         val result = am.requestAudioFocus(audioFocusRequest)
         if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
             hasFocus = true
-            Log.d(TAG, "AUDIOFOCUS_REQUEST_GRANTED")
+            Log.d(TAG, "AUDIO_FOCUS_REQUEST_GRANTED")
             manager.mediaSession.isActive = true
-            val notificationManager = NotificationManagerCompat.from(context)
-            notificationManager.notify(1, manager.updateNotification())
+            manager.mediaSession.setPlaybackState(
+                playbackStateBuilder
+                    .setState(
+                        PlaybackStateCompat.STATE_PLAYING, 0, 1F
+                    )
+                    .setActions(
+                        PlaybackStateCompat.ACTION_PAUSE or
+                                PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+                                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+                    ).build()
+            )
         }
-        //service.startForeground(1, manager.updateNotification())
     }
 
     override fun onPlayFromSearch(query: String?, extras: Bundle?) {
@@ -105,21 +107,18 @@ class MySessionCallback constructor(private val manager: Manager, private val co
     override fun onPause() {
         super.onPause()
         Log.d(TAG, "onPause")
-        manager.togglePlaying()
 
-//        manager.mediaSession.setPlaybackState(
-//            PlaybackStateCompat.Builder()
-//                .setState(
-//                    PlaybackStateCompat.STATE_PAUSED, 0, 1F
-//                )
-//                .setActions(
-//                    PlaybackStateCompat.ACTION_PLAY or
-//                            PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
-//                            PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
-//                ).build()
-//        )
-        val notificationManager = NotificationManagerCompat.from(context)
-        notificationManager.notify(1, manager.updateNotification())
+        manager.mediaSession.setPlaybackState(
+            playbackStateBuilder
+                .setState(
+                    PlaybackStateCompat.STATE_PAUSED, 0, 1F
+                )
+                .setActions(
+                    PlaybackStateCompat.ACTION_PLAY or
+                            PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+                            PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+                ).build()
+        )
     }
 
     override fun onStop() {
@@ -149,25 +148,21 @@ class MySessionCallback constructor(private val manager: Manager, private val co
             Log.d(TAG, "audio focus changed: $it")
             when (it) {
                 AudioManager.AUDIOFOCUS_LOSS -> {
-                    manager.playing = false
                     hasFocus = false
                     Log.d(TAG, "audioFocus LOST")
                     manager.updateNotification()
                 }
                 AudioManager.AUDIOFOCUS_GAIN -> {
                     hasFocus = true
-                    manager.playing = true
                     Log.d(TAG, "audioFocus GAINED")
                     manager.updateNotification()
                 }
                 AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
-                    manager.playing = false
                     hasFocus = false
                     Log.d(TAG, "audioFocus AUDIOFOCUS_LOSS_TRANSIENT")
                     manager.updateNotification()
                 }
                 else -> {
-                    manager.playing = false
                     Log.d(TAG, "other audiofocus event")
                     manager.updateNotification()
                 }

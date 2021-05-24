@@ -26,7 +26,7 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
 
     val TAG = "MediaPlaybackService"
 
-    private lateinit var mediaSession: MediaSessionCompat
+    lateinit var mediaSession: MediaSessionCompat
     private lateinit var manager: Manager
 
     private val volumeProvider = object : VolumeProviderCompat(VOLUME_CONTROL_ABSOLUTE, 10, 0) {
@@ -41,11 +41,6 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             currentVolume = volume
             Log.d(TAG, "Set volume to: $volume")
         }
-    }
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        MediaButtonReceiver.handleIntent(mediaSession, intent)
-        return super.onStartCommand(intent, flags, startId)
     }
 
     override fun onCreate() {
@@ -71,13 +66,21 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
                     .build()
             )
 
+            setPlaybackState(PlaybackStateCompat.Builder().setState(
+                PlaybackStateCompat.STATE_PAUSED, 0, 1F)
+                .setActions(
+                    PlaybackStateCompat.ACTION_PLAY or
+                            PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+                            PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+                ).build()
+            )
+
             setPlaybackToRemote(volumeProvider)
 
             setCallback(
                 MySessionCallback(
                     manager,
-                    applicationContext,
-                    this@MediaPlaybackService
+                    applicationContext
                 )
             )
 
@@ -103,11 +106,7 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
                 override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
                     super.onPlaybackStateChanged(state)
                     val notificationManager = NotificationManagerCompat.from(this@MediaPlaybackService)
-                    when(state?.state) {
-                        PlaybackStateCompat.STATE_PLAYING -> manager.playing = true
-                        else -> manager.playing = false
-                    }
-                    //notificationManager.notify(1, manager.updateNotification())
+                    notificationManager.notify(1, manager.updateNotification())
                     Log.d(TAG, "onPlaybackStateChanged: ${state.toString()}")
 
                 }
@@ -161,10 +160,5 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         rootHints: Bundle?
     ): BrowserRoot? {
         return BrowserRoot(MY_MEDIA_ROOT_ID, null)
-    }
-
-    companion object {
-        val ACTION_SKIP_TO_NEXT = "NOTIFICATION_SKIP_TO_NEXT"
-        val ACTION_SKIP_TO_PREV = "NOTIFICATION_SKIP_TO_PREV"
     }
 }
