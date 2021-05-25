@@ -29,18 +29,9 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     lateinit var mediaSession: MediaSessionCompat
     private lateinit var manager: Manager
 
-    private val volumeProvider = object : VolumeProviderCompat(VOLUME_CONTROL_ABSOLUTE, 10, 0) {
-        override fun onAdjustVolume(direction: Int) {
-            super.onAdjustVolume(direction)
-            currentVolume += direction
-            Log.d(TAG, "Adjusted volume in direction: $direction")
-        }
-
-        override fun onSetVolumeTo(volume: Int) {
-            super.onSetVolumeTo(volume)
-            currentVolume = volume
-            Log.d(TAG, "Set volume to: $volume")
-        }
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        MediaButtonReceiver.handleIntent(mediaSession, intent)
+        return super.onStartCommand(intent, flags, startId)
     }
 
     override fun onCreate() {
@@ -49,70 +40,10 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             return
         }
 
-        mediaSession = MediaSessionCompat(this, "MediaNotificationSession")
+        mediaSession = MyMediaSession(this, "MediaNotificationSession")
 
         manager = Manager.getInstance(this, mediaSession)
-
-        mediaSession.apply {
-
-            setMetadata(
-                MediaMetadataCompat.Builder()
-                    .putString(MediaMetadata.METADATA_KEY_TITLE, "Wonder")
-                    .putString(MediaMetadata.METADATA_KEY_ARTIST, "Tranquilities")
-                    .putLong(
-                        MediaMetadata.METADATA_KEY_DURATION,
-                        -1
-                    ) // negative is unknown or infinite
-                    .build()
-            )
-
-            setPlaybackState(PlaybackStateCompat.Builder().setState(
-                PlaybackStateCompat.STATE_PAUSED, 0, 1F)
-                .setActions(
-                    PlaybackStateCompat.ACTION_PLAY or
-                            PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
-                            PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
-                ).build()
-            )
-
-            setPlaybackToRemote(volumeProvider)
-
-            setCallback(
-                MySessionCallback(
-                    manager,
-                    applicationContext
-                )
-            )
-
-            setSessionActivity(
-                PendingIntent.getActivity(
-                    this@MediaPlaybackService,
-                    1,
-                    Intent(this@MediaPlaybackService, MainActivity::class.java),
-                    PendingIntent.FLAG_UPDATE_CURRENT
-                )
-            )
-
-            isActive = true
-            setSessionToken(sessionToken)
-
-            controller.registerCallback(object : MediaControllerCompat.Callback() {
-                override fun onAudioInfoChanged(info: MediaControllerCompat.PlaybackInfo?) {
-                    super.onAudioInfoChanged(info)
-                    Log.d(TAG, "onAudioInfoChanged: ${info.toString()}")
-                }
-
-                @RequiresApi(Build.VERSION_CODES.O)
-                override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
-                    super.onPlaybackStateChanged(state)
-                    val notificationManager = NotificationManagerCompat.from(this@MediaPlaybackService)
-                    notificationManager.notify(1, manager.updateNotification())
-                    Log.d(TAG, "onPlaybackStateChanged: ${state.toString()}")
-
-                }
-            })
-        }
-
+        sessionToken = mediaSession.sessionToken
 
         Log.d(TAG, "onCreate called, mediaSession created")
         Log.d(TAG, "media session active: ${mediaSession.isActive}")
