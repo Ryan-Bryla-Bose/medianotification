@@ -1,6 +1,5 @@
 package com.testing.medianotification.notification
 
-import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
@@ -14,15 +13,30 @@ import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import android.view.KeyEvent
 import androidx.annotation.RequiresApi
-import androidx.core.app.NotificationManagerCompat
-import androidx.media.MediaBrowserServiceCompat
 
 @RequiresApi(Build.VERSION_CODES.O)
 class MySessionCallback constructor(private val manager: Manager, private val context: Context) :
     MediaSessionCompat.Callback() {
     val TAG = "MySessionCallback"
 
-    val playbackStateBuilder: PlaybackStateCompat.Builder = PlaybackStateCompat.Builder()
+    private val playbackStateBuilder: PlaybackStateCompat.Builder = PlaybackStateCompat.Builder()
+
+    private val playingState: PlaybackStateCompat get() = playbackStateBuilder
+        .setState(PlaybackStateCompat.STATE_PLAYING, 0, 1F)
+        .setActions(
+            PlaybackStateCompat.ACTION_PAUSE or
+                    PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+                    PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+        ).build()
+
+    private val pausedState: PlaybackStateCompat get() = playbackStateBuilder
+        .setState(PlaybackStateCompat.STATE_PAUSED, 0, 1F)
+        .setActions(
+            PlaybackStateCompat.ACTION_PLAY or
+                    PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+                    PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+        ).build()
+
 
     override fun onCommand(command: String, args: Bundle?, cb: ResultReceiver?) {
         super.onCommand(command, args, cb)
@@ -49,8 +63,6 @@ class MySessionCallback constructor(private val manager: Manager, private val co
 
         val am = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
-        // Request audio focus for playback, this registers the afChangeListener
-
         val audioFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN).run {
             setOnAudioFocusChangeListener(audioFocusChangeListener(manager))
             setAudioAttributes(
@@ -63,17 +75,7 @@ class MySessionCallback constructor(private val manager: Manager, private val co
 
         if (hasFocus) {
             manager.mediaSession.isActive = true
-            manager.mediaSession.setPlaybackState(
-                playbackStateBuilder
-                    .setState(
-                        PlaybackStateCompat.STATE_PLAYING, 0, 1F
-                    )
-                    .setActions(
-                        PlaybackStateCompat.ACTION_PAUSE or
-                                PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
-                                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
-                    ).build()
-            )
+            manager.mediaSession.setPlaybackState(playingState)
 //            service.startForeground(1, manager.updateNotification())
             Log.d(TAG, "AUDIO_FOCUS already acquired")
             return
@@ -83,17 +85,7 @@ class MySessionCallback constructor(private val manager: Manager, private val co
             hasFocus = true
             Log.d(TAG, "AUDIO_FOCUS_REQUEST_GRANTED")
             manager.mediaSession.isActive = true
-            manager.mediaSession.setPlaybackState(
-                playbackStateBuilder
-                    .setState(
-                        PlaybackStateCompat.STATE_PLAYING, 0, 1F
-                    )
-                    .setActions(
-                        PlaybackStateCompat.ACTION_PAUSE or
-                                PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
-                                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
-                    ).build()
-            )
+            manager.mediaSession.setPlaybackState(playingState)
         }
     }
 
@@ -108,17 +100,7 @@ class MySessionCallback constructor(private val manager: Manager, private val co
         super.onPause()
         Log.d(TAG, "onPause")
 
-        manager.mediaSession.setPlaybackState(
-            playbackStateBuilder
-                .setState(
-                    PlaybackStateCompat.STATE_PAUSED, 0, 1F
-                )
-                .setActions(
-                    PlaybackStateCompat.ACTION_PLAY or
-                            PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
-                            PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
-                ).build()
-        )
+        manager.mediaSession.setPlaybackState(pausedState)
     }
 
     override fun onStop() {
@@ -138,8 +120,7 @@ class MySessionCallback constructor(private val manager: Manager, private val co
         manager.updateNotification()
     }
 
-
-    private class audioFocusChangeListener constructor(private val manager: Manager) :
+    inner class audioFocusChangeListener constructor(private val manager: Manager) :
         AudioManager.OnAudioFocusChangeListener {
 
         val TAG = "AudioChangeListener"
@@ -150,6 +131,7 @@ class MySessionCallback constructor(private val manager: Manager, private val co
                 AudioManager.AUDIOFOCUS_LOSS -> {
                     hasFocus = false
                     Log.d(TAG, "audioFocus LOST")
+                    manager.mediaSession.setPlaybackState(pausedState)
                     manager.updateNotification()
                 }
                 AudioManager.AUDIOFOCUS_GAIN -> {

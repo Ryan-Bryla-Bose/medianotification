@@ -1,7 +1,11 @@
 package com.testing.medianotification
 
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
 import android.media.browse.MediaBrowser
 import android.media.session.MediaController
 import android.os.Build
@@ -50,6 +54,23 @@ class MainActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         mediaBrowser.disconnect()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun onDestroy() {
+        super.onDestroy()
+        val am = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        val audioFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN).run {
+            setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build()
+            )
+            build()
+        }
+        am.abandonAudioFocusRequest(audioFocusRequest)
+//        val serviceIntent = Intent(this, MediaPlaybackService::class.java)
+//        stopService(serviceIntent)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
